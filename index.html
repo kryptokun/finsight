@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FinSight — AI Financial Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1e1e2e;
+      --accent: #00e5a0;
+      --accent-dim: rgba(0,229,160,0.1);
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --danger: #ff6b6b;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    h1 span { font-weight: 600; }
+
+    .subtitle {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    .search-bar {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 48px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar input::placeholder { color: var(--muted); text-transform: none; letter-spacing: 0; }
+    .search-bar input:focus { border-color: var(--accent); }
+
+    .search-bar button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 24px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-bar button:hover { opacity: 0.85; }
+    .search-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .results {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .company-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+    }
+
+    .company-header .tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .company-header h2 {
+      font-size: 26px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .company-header .meta {
+      color: var(--muted);
+      font-size: 13px;
+      font-family: var(--mono);
+    }
+
+    .company-header .summary {
+      margin-top: 16px;
+      color: #b0b0c0;
+      font-size: 14px;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+
+    .card h3 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .metric-row:last-child { border-bottom: none; }
+    .metric-row .label { color: var(--muted); font-weight: 300; }
+    .metric-row .value { font-family: var(--mono); color: var(--accent); font-size: 13px; }
+
+    .risks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .risk-item {
+      background: rgba(255,107,107,0.06);
+      border: 1px solid rgba(255,107,107,0.15);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #c0c0d0;
+      line-height: 1.5;
+      font-weight: 300;
+    }
+
+    .outlook-card {
+      background: var(--accent-dim);
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+
+    .outlook-card h3 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .outlook-card p {
+      font-size: 14px;
+      color: #c0e8d8;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    .filing-link {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .filing-link a {
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2px;
+      transition: color 0.2s;
+    }
+
+    .filing-link a:hover { color: var(--accent); }
+
+    .loading {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading p { font-size: 13px; font-family: var(--mono); letter-spacing: 0.1em; }
+
+    .error {
+      background: rgba(255,107,107,0.08);
+      border: 1px solid rgba(255,107,107,0.25);
+      border-radius: 10px;
+      padding: 20px 24px;
+      color: var(--danger);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .examples {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .example-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+    }
+
+    .example-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SEC 10-K Analysis</div>
+  <h1>Fin<span>Sight</span></h1>
+  <p class="subtitle">AI-powered financial analysis from SEC filings</p>
+</header>
+
+<div class="search-bar">
+  <input id="ticker-input" type="text" placeholder="Enter ticker symbol (e.g. AAPL)" maxlength="10" />
+  <button id="analyze-btn" onclick="analyze()">Analyze</button>
+</div>
+
+<div class="examples">
+  <span class="example-chip" onclick="setTicker('AAPL')">AAPL</span>
+  <span class="example-chip" onclick="setTicker('MSFT')">MSFT</span>
+  <span class="example-chip" onclick="setTicker('NVDA')">NVDA</span>
+  <span class="example-chip" onclick="setTicker('TSLA')">TSLA</span>
+  <span class="example-chip" onclick="setTicker('AMZN')">AMZN</span>
+</div>
+
+<div class="results" id="results"></div>
+
+<script>
+  const input = document.getElementById('ticker-input');
+  const btn = document.getElementById('analyze-btn');
+  const results = document.getElementById('results');
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') analyze(); });
+
+  function setTicker(t) {
+    input.value = t;
+    analyze();
+  }
+
+  async function analyze() {
+    const ticker = input.value.trim().toUpperCase();
+    if (!ticker) return;
+
+    btn.disabled = true;
+    results.innerHTML = `
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Fetching SEC filing for ${ticker}...</p>
+      </div>`;
+
+    try {
+      const res = await fetch('http://localhost:8000/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || 'Something went wrong');
+      }
+
+      const data = await res.json();
+      render(data);
+    } catch (e) {
+      results.innerHTML = `<div class="error">⚠ ${e.message}</div>`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function render(d) {
+    const m = d.key_metrics || {};
+    const r = d.ratios || {};
+    const risks = (d.risks || []).map(risk => `<div class="risk-item">${risk}</div>`).join('');
+
+    results.innerHTML = `
+      <div class="company-header">
+        <div class="tag">${d.ticker} · ${d.fiscal_year}</div>
+        <h2>${d.company}</h2>
+        <div class="meta">Source: SEC EDGAR 10-K Filing</div>
+        <p class="summary">${d.summary}</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Key Metrics</h3>
+          ${row('Revenue', m.revenue)}
+          ${row('Net Income', m.net_income)}
+          ${row('Total Assets', m.total_assets)}
+          ${row('Total Debt', m.total_debt)}
+          ${row('Cash & Equivalents', m.cash)}
+        </div>
+        <div class="card">
+          <h3>Ratios</h3>
+          ${row('Gross Margin', r.gross_margin)}
+          ${row('Net Margin', r.net_margin)}
+          ${row('Debt / Equity', r.debt_to_equity)}
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Top Risks</h3>
+        <div class="risks-list">${risks}</div>
+      </div>
+
+      <div class="outlook-card">
+        <h3>Management Outlook</h3>
+        <p>${d.outlook}</p>
+      </div>
+
+      <div class="filing-link">
+        <a href="${d.filing_url}" target="_blank">View original SEC filing →</a>
+      </div>
+    `;
+  }
+
+  function row(label, value) {
+    return `<div class="metric-row"><span class="label">${label}</span><span class="value">${value || 'N/A'}</span></div>`;
+  }
+</script>
+</body>
+</html>
