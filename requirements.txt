@@ -3,3 +3,4 @@ uvicorn
 anthropic
 httpx
 pydantic
+slowapi

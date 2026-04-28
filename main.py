@@ -4,6 +4,11 @@ from pydantic import BaseModel
 import anthropic
 import httpx
 import json
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi import Request
+
 
 app = FastAPI()
 
@@ -16,6 +21,9 @@ app.add_middleware(
 
 client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
 
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 class AnalyzeRequest(BaseModel):
     ticker: str
@@ -117,7 +125,8 @@ Gross Profit: {gross_profit}
 
 
 @app.post("/analyze")
-async def analyze(req: AnalyzeRequest):
+@limiter.limit("5/hour")
+async def analyze(request: Request, req: AnalyzeRequest):
     ticker = req.ticker.strip().upper()
 
     # 1. Get CIK
